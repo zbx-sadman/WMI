@@ -38,6 +38,6 @@ Make sure that all doublequotes is escaped, if its used in query string with Zab
 - Edit or add cases on Switch() in Define-LLDMacros() function to specify Zabbix's LLD macro names;
 - To see all instances and its metrics just do right query with _Get_ command: `... "wmi_helper.ps1" -Action "Get" -Namespace "ROOT\HPQ" -Query "select * from HP_Processor" -defaultConsoleWidth`;
 - You can use WMI Helper to bring values '1' or '0' instead Windows's 'True' or 'False' to Zabbix's Data Item. Example: `wmi.helper[get,root\hpq,select PoweredOn from HP_ProcessorChip where Name=\"Proc 1\"]`;
-- To get on Zabbix Server side properly UTF-8 output when have non-english (for example Russian Cyrillic) symbols in Computer Group's names, use  _-consoleCP **your_native_codepage**_ command line option. For example to convert from Russian Cyrillic codepage (CP866): _... "wsus_miner.ps1"  ... -consoleCP CP866_;
+- To get on Zabbix Server side properly UTF-8 output when have non-english (for example Russian Cyrillic) symbols in Computer Group's names, use  _-consoleCP **your_native_codepage**_ command line option. For example to convert from Russian Cyrillic codepage (CP866): _... "wmi_helper.ps1"  ... -consoleCP CP866_;
 - If u need additional symbol escaping in LLD JSON - just add one or more symbols to _$EscapedSymbols_ array in _PrepareTo-Zabbix_ function;
 - To measure script runtime use _Verbose_ command line switch.
