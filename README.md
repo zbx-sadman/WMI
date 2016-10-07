@@ -2,11 +2,11 @@
 
 This is a little Powershell script that helps to use WMI with Zabbix
 
-Actual release 0.9.0
+Actual release 0.9.1
 
 Tested on:
-- Production mode: Windows Server 2008 R2 SP1, WSUS 3.0 SP1, Powershell 2;
-- Non-production mode: Windows Server 2012 R2, WSUS 6, Powershell 4.
+- HP DL360e, Windows Server 2008R2 SP1, Powershell 2.0;
+- HP DL360p, Windows Server 2012 R2, PowerShell 4.
 
 Actions:
 - _Discovery_ - Make Zabbix's LLD JSON from WMI instances, which fetched with WMI query;
@@ -35,6 +35,8 @@ Do not try import Zabbix v2.4 template to Zabbix _pre_ v2.4. You need to edit .x
 Be sure that all doublequotes is escaped, if its used in query string with Zabbix. Otherwise you will see error messages instead expected values.
 
 ###Hints
+- Edit or add cases on Switch() in Define-LLDMacros() function to specify Zabbix's LLD macro names;
+- To see all instances and its metrics just do right query with _Get_ command: `... "wmi_helper.ps1" -Action "Get" -Namespace "ROOT\HPQ" -Query "select * from HP_Processor" -defaultConsoleWidth`;
 - You can use WMI Helper to bring values '1' or '0' instead Windows's 'True' or 'False' to Zabbix's Data Item. Example: `wmi.helper[get,root\hpq,select PoweredOn from HP_ProcessorChip where Name=\"Proc 1\"]`;
 - To get on Zabbix Server side properly UTF-8 output when have non-english (for example Russian Cyrillic) symbols in Computer Group's names, use  _-consoleCP **your_native_codepage**_ command line option. For example to convert from Russian Cyrillic codepage (CP866): _... "wsus_miner.ps1"  ... -consoleCP CP866_;
 - If u need additional symbol escaping in LLD JSON - just add one or more symbols to _$EscapedSymbols_ array in _PrepareTo-Zabbix_ function;

@@ -8,12 +8,12 @@
         Also returns value of specified by index item of array that fetched by WMI query
 
     .NOTES  
-        Version: 0.9.0
+        Version: 0.9.1
         Name: WMI helper
         Author: zbx.sadman@gmail.com
         DateCreated: 
-        Testing environment: Windows Server 2008R2 SP1, Powershell 2.0
-        Non-production testing environment: Windows Server 2012 R2, PowerShell 4
+        Testing environment: HP DL360e, Windows Server 2008R2 SP1, Powershell 2.0;
+                             HP DL360p, Windows Server 2012 R2, PowerShell 4.
 
     .LINK  
         https://github.com/zbx-sadman
@@ -21,7 +21,7 @@
     .PARAMETER Action
         What need to do with WMI objects :
             Discovery - Make Zabbix's LLD JSON;
-            Get       - Get value of object or array item.
+            Get       - Get value of metric or array item.
 
     .PARAMETER Namespace
         Namespace to WMI query
@@ -49,7 +49,12 @@
         Return Value of first item of OperationalStatus array that fetched from HP_Processor class of ROOT\HPQ namespace.
         Verbose messages is enabled.
 
+    .EXAMPLE 
+        ... "wmi_helper.ps1" -Action "Get" -Namespace "ROOT\HPQ" -Query "select * from HP_Processor" -defaultConsoleWidth 
 
+        Description
+        -----------  
+        Show all instances (and its metrics) that is obtained on query execution.
 #>
 
 
@@ -83,6 +88,30 @@ Set-Variable -Option Constant -Name "CONSOLE_WIDTH" -Value 512
 #                                                  Function block
 #    
 ####################################################################################################################################
+
+#
+#  Define names of params in class instances to be use its as LLD macros
+#
+Function Define-LLDMacros {
+   Param (
+      [Parameter(ValueFromPipeline = $True)] 
+      [PSObject]$InputObject
+   );
+   $Class = $InputObject[0].__CLASS;
+   # return array of parameter names, that will be used as LLD macros
+   Switch ($Class) {
+     #  'HP_DiskDrive' { @("DEVICEID", "NAME"); }
+     #  'HP_Processor' { @("DEVICEID", "NAME"); }
+     'HP_MemoryModule'         { @("NAME", "MANUFACTURER", "TAG"); }
+     # HP_EthernetPort is HP_WinEthernetPort class in real
+     'HP_WinEthernetPort'      { @("DEVICEID", "CAPTION", "PORTTYPE"); }
+     # HP_EthernetPort is HP_WinEthernetPort  class in real
+     'HP_WinNumericSensor '    { @("DEVICEID", "NAME", "UPPERTHRESHOLDCRITICAL", "NUMERICSENSORTYPE"); }
+     'HPSA_ArrayController'    { @("NAME", "ELEMENTNAME"); }
+      Default                  { @("DEVICEID", "NAME"); }
+   }  
+}
+
 #
 #  Prepare string to using with Zabbix 
 #
@@ -209,7 +238,6 @@ Write-Verbose "$(Get-Date) Taking instances...";
 # Prepare object lists
 
 $Objects = Get-WmiObject -Computer "." -Query $Query -NameSpace $NameSpace;
-
 #$Objects | fl *
 #exit
 
@@ -219,19 +247,8 @@ $Result = $(
    Switch ($Action) {
       'Discovery' {
          # Discovery given object, make json for zabbix
-         $Class = $Objects[0].__CLASS;
-         Write-Verbose "$(Get-Date) Class of object(s) is '$Class'";
-         $ObjectProperties = $(
-            Switch ($Class) {
-              #  'HP_DiskDrive' { @("DEVICEID", "NAME"); }
-              #  'HP_Processor' { @("DEVICEID", "NAME"); }
-              'HP_MemoryModule'         { @("NAME", "MANUFACTURER", "TAG"); }
-              # HP_EthernetPort is have HP_WinEthernetPort in real
-              'HP_WinEthernetPort'      { @("DEVICEID", "CAPTION", "PORTTYPE"); }
-              'HPSA_ArrayController'    { @("NAME", "ELEMENTNAME"); }
-              Default                   { @("DEVICEID", "NAME"); }
-            }  
-         )
+         Write-Verbose "$(Get-Date) Class of object(s) is '$($Objects[0].__CLASS)'";
+         $ObjectProperties = Define-LLDMacros -InputObject $Objects;
          Write-Verbose "$(Get-Date) Generating LLD JSON";
          Make-JSON -InputObject $Objects -ObjectProperties $ObjectProperties -Pretty;
       }
@@ -239,7 +256,9 @@ $Result = $(
          # Select value if single metric or array's item
          If ($Null -ne $Objects) { 
             Write-Verbose "$(Get-Date) Select value of single object or array item that selected by WMI query";
-            $Objects = $( If ($($Objects.Properties).IsArray) {
+            $Objects = $( If (1 -lt $Objects.Length) {
+                             $Objects;
+                          } ElseIf ($($Objects.Properties).IsArray) {
                              $($Objects.Properties).Value[$Idx];
                           } else {
                              $($Objects.Properties).Value;
