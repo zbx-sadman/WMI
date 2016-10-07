@@ -32,7 +32,7 @@ Actions:
 Do not try import Zabbix v2.4 template to Zabbix _pre_ v2.4. You need to edit .xml file and make some changes at discovery_rule - filter tags area and change _#_ to _<>_ in trigger expressions. I will try to make template to old Zabbix.
 
 **Note #2**
-Be sure that all doublequotes is escaped, if its used in query string with Zabbix. Otherwise you will see error messages instead expected values.
+Make sure that all doublequotes is escaped, if its used in query string with Zabbix. Otherwise you will see error messages instead expected values.
 
 ###Hints
 - Edit or add cases on Switch() in Define-LLDMacros() function to specify Zabbix's LLD macro names;
